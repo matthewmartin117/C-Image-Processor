@@ -6,7 +6,7 @@
 using namespace std;
 
 //***************************************************************************************************//
-//                                DO NOT MODIFY THE SECTION BELOW                                    //
+// Objects 
 //***************************************************************************************************//
 
 // Pixel structure
@@ -212,13 +212,12 @@ bool write_image(string filename, const vector<vector<Pixel>>& image)
 }
 
 //***************************************************************************************************//
-//                                DO NOT MODIFY THE SECTION ABOVE                                    //
+//                                Func definitions                                  //
 //***************************************************************************************************//
 
 
 //
-// YOUR FUNCTION DEFINITIONS HERE
-
+// helper function - gets image dimensions 
 
 
  // process 1 - update : working 12/12/23
@@ -306,37 +305,83 @@ bool write_image(string filename, const vector<vector<Pixel>>& image)
 
 // process 3 grayscale working 12/12/23
 vector<vector<Pixel>> process_3(const vector<vector<Pixel>>& image){
-    // to get the height and width of the pixels
-    int num_rows = image.size(); // get the height of the 2D vector called image
-    int num_columns = image[0].size(); // Gets the number of columns (i.e. width) in a 2D vector named image
-    int height = num_columns; // alt var name for convenience
-    int width = num_columns; // alt var name
-    
-    
-    // create a new image and prepopulate it
-   vector<vector<Pixel>> new_image(num_rows, vector<Pixel> (num_columns));     
-    // write a nested for loop that loops thru every pixel value 
-    for (int row = 0;row < num_rows;row++){
-        for(int col = 0;col < num_columns;col++){
-            
-           
-            // get the R G B vals
-            int red_val = image[row][col].red;
-            int green_val = image[row][col].green;
-            int blue_val = image[row][col].blue;
+    const int sobelX[3][3] = {
+        {-1, 0, 1},
+        {-2, 0, 2},
+        {-1, 0, 1}
+    };
 
-            // avg the values
-             int gray_val = (red_val + green_val + blue_val) / 3;
-            
-            // set all vals to gray val
-            new_image[row][col].red = gray_val;
-            new_image[row][col].green = gray_val;
-            new_image[row][col].blue = gray_val;
-            
-         
-      } 
+    const int sobelY[3][3] = {
+        {1, 2, 1},
+        {0, 0, 0},
+        {-1, -2, -1}
+    };
+
+    int num_rows = image.size();
+    int num_columns = image[0].size();
+
+    // Create a new image to store the edge-detected result
+    vector<vector<Pixel>> new_image(num_rows, vector<Pixel>(num_columns));
+
+    // Apply the Sobel operator while converting to grayscale
+    for (int row = 1; row < num_rows - 1; row++) {
+        for (int col = 1; col < num_columns - 1; col++) {
+            int gx = 0; // Gradient in x direction
+            int gy = 0; // Gradient in y direction
+            int gray_val = 0; // Grayscale value
+
+            // Apply the Sobel kernel
+            for (int i = -1; i <= 1; i++) {
+                for (int j = -1; j <= 1; j++) {
+                    // Access the pixel
+                    int red_val = image[row + i][col + j].red;
+                    int green_val = image[row + i][col + j].green;
+                    int blue_val = image[row + i][col + j].blue;
+
+                    // Calculate the grayscale value
+                    gray_val += (red_val + green_val + blue_val) / 3;
+
+                    // Calculate gradients
+                    gx += (red_val + green_val + blue_val) / 3 * sobelX[i + 1][j + 1];
+                    gy += (red_val + green_val + blue_val) / 3 * sobelY[i + 1][j + 1];
+                }
+            }
+
+            // Average grayscale value
+            gray_val /= 9; // 3x3 kernel, so divide by 9
+
+            // Calculate the gradient magnitude
+            int magnitude = static_cast<int>(sqrt(gx * gx + gy * gy));
+
+            // Normalize the value to stay within 0-255
+            magnitude = min(255, max(0, magnitude));
+
+            // Set the new pixel value in the edge-detected image
+            new_image[row][col].red = magnitude;  // Grayscale value
+            new_image[row][col].green = magnitude;  // Grayscale value
+            new_image[row][col].blue = magnitude;  // Grayscale value
+        }
     }
-        return new_image;
+
+    // Optionally, set the border pixels to black or keep them unchanged
+    for (int row = 0; row < num_rows; row++) {
+        new_image[row][0].red = 0;
+        new_image[row][0].green = 0;
+        new_image[row][0].blue = 0;
+        new_image[row][num_columns - 1].red = 0;
+        new_image[row][num_columns - 1].green = 0;
+        new_image[row][num_columns - 1].blue = 0;
+    }
+    for (int col = 0; col < num_columns; col++) {
+        new_image[0][col].red = 0;
+        new_image[0][col].green = 0;
+        new_image[0][col].blue = 0;
+        new_image[num_rows - 1][col].red = 0;
+        new_image[num_rows - 1][col].green = 0;
+        new_image[num_rows - 1][col].blue = 0;
+    }
+
+    return new_image;
     } 
 
 
@@ -689,7 +734,7 @@ int main()
     cout << " 0) Change image (current: " + filename + ")" << endl;
     cout << " 1) Vignette" << endl;
     cout << " 2) Clarendon" << endl;
-    cout << " 3) Grayscale" << endl;
+    cout << " 3) Grayscale and Edge Detection" << endl;
     cout << " 4) Rotate 90 degrees" << endl;
     cout << " 5) Rotate multiple 90 degrees" << endl;
     cout << " 6) Enlarge" << endl;
