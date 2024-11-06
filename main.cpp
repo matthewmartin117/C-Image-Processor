@@ -814,9 +814,7 @@ int main()
 
 
 
-// CHECKLIST 
-    // implement 0 functionality to the menu  (ability to change the image) - done 12/13/2023
-    // handle undesired inputs
+
     
     
     
